@@ -1,12 +1,14 @@
 {
   "name": "tessera",
-  "description": "Tessera: a map of what you do with Claude",
-  "owner": { "name": "Ferit Sari Tomé" },
+  "description": "Tessera: a zoomable map of everything you do with Claude, built locally from your own sessions.",
+  "owner": { "name": "Ferit Sari Tomé", "url": "https://github.com/fsaritome" },
   "plugins": [
     {
       "name": "tessera",
       "source": "./",
-      "description": "Scan your Claude sessions locally and see them as a zoomable map of headlines, projects, activities and methods."
+      "description": "Scan your Claude sessions locally, redact them, and see them as a zoomable map of headlines, projects, activities and methods. Runs on your own Claude plan; type /tessera:map.",
+      "homepage": "https://github.com/fsaritome/Tessera",
+      "keywords": ["insights", "map", "sessions", "productivity", "visualization"]
     }
   ]
 }
