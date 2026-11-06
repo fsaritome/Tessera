@@ -91,7 +91,8 @@ def _cmd_prepare(cfg, args) -> int:
     if not p.batches:
         print(f"Nothing to do: all {p.total_units} units are extracted.")
         return 0
-    print(f"{p.units} of {p.total_units} units to extract, in {len(p.batches)} batches. "
+    n = len(p.batches)
+    print(f"{p.units} of {p.total_units} units to extract, in {n} batch{'' if n == 1 else 'es'}. "
           "Redacted before writing.")  # fmt: skip
     print(f"Estimated use of your Claude plan: ~{p.tokens:,} tokens "
           f"(~{p.tokens // max(len(p.batches), 1):,} per batch). Nothing is read until Claude "

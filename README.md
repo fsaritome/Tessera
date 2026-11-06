@@ -17,16 +17,29 @@ methods that connect them. Each session is one tile; Tessera puts the mosaic tog
   replaced before Claude reads anything, and the map refers to people by role, not name.
 - **Honest.** Every activity traces back to a session. Nothing is invented, nothing is posted.
 
+![A real Tessera map: four headlines, each a cluster of projects and activities](docs/map-overview.png)
+
 ## Install
 
-**1. Get the two tools** (once):
+**1. Get the two tools** (once). Paste these into a terminal: PowerShell on Windows,
+Terminal on Mac or Linux.
 
-- [Claude Code](https://code.claude.com/docs/en/quickstart), signed in with your Claude plan.
-  On Windows, open a *new* terminal after installing it; if `claude` is still not found,
-  add `%USERPROFILE%\.local\bin` to your PATH as the installer says.
-- [uv](https://docs.astral.sh/uv/getting-started/installation/), which runs Tessera.
+[Claude Code](https://code.claude.com/docs/en/quickstart), the Claude you type to:
 
-**2. Add Tessera.** Start Claude Code (`claude` in a terminal) and type, one at a time:
+| Windows (PowerShell) | Mac and Linux |
+|---|---|
+| `irm https://claude.ai/install.ps1 \| iex` | `curl -fsSL https://claude.ai/install.sh \| bash` |
+
+[uv](https://docs.astral.sh/uv/getting-started/installation/), which runs Tessera:
+
+| Windows (PowerShell) | Mac and Linux |
+|---|---|
+| `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+
+Then **close the terminal and open a new one**, so both commands are found. Type `claude`
+and sign in with your Claude account the first time.
+
+**2. Add Tessera.** In Claude Code, type these one at a time and press Enter after each:
 
 ```
 /plugin marketplace add fsaritome/Tessera
@@ -51,26 +64,41 @@ already read are never read again. `/tessera:map 365` adds the rest of the year.
 **In the Claude desktop app:** once installed, Tessera is also there in the app's Code tab.
 Start a Code session and type `/tessera:map`.
 
+**Update** to a new version: `/plugin marketplace update tessera`, then
+`/plugin install tessera@tessera`. **Remove** it: `/plugin uninstall tessera@tessera`,
+and delete the `.tessera` folder in your home folder to remove its data too.
+
 ## What it costs
 
 Tessera itself is free, but Claude reads your sessions **on your own Claude plan**, so it
 uses your plan's limits like any other work in Claude Code. Before reading, Tessera shows
-the number of batches and an estimate, and asks you first if there are more than 15:
+the number of batches and an estimate. This is a real one, for 30 days on one computer:
 
 ```
-120 of 120 units to extract, in 9 batches. Redacted before writing.
-Estimated use of your Claude plan: ~140,000 tokens (~15,000 per batch).
+7 of 11 units to extract, in 1 batch. Redacted before writing.
+Estimated use of your Claude plan: ~10,195 tokens (~10,195 per batch).
 ```
 
-A batch is about 15,000 tokens. A month of daily use is often a few batches; a year of
-heavy use can be dozens. Start with the default 30 days and add more once you like the
-map. Later runs only read what is new.
+A batch holds up to about 15,000 tokens. With more than 15 batches, Claude asks you
+before it starts, so a heavy year of use (dozens of batches) never runs by surprise.
+Start with the default 30 days and add more once you like the map. Later runs only read
+what is new.
+
+## If something goes wrong
+
+| What you see | What to do |
+|---|---|
+| `claude` or `uv` is "not recognized" / "command not found" | Close the terminal and open a new one. On Windows, if `claude` is still missing, add `%USERPROFILE%\.local\bin` to your PATH (the installer prints this). |
+| Claude Code asks whether you trust the folder | Normal first-start check. Choose "Yes" for a folder of your own, e.g. your home folder. |
+| `/tessera:map` is unknown | Type `/reload-plugins`. If that does not help, run the two `/plugin` commands again. |
+| "Nothing to do" | Everything in the time window is already read. `/tessera:map 365` looks further back. |
+| The map page does not open | Claude starts it at the end; ask it "open the Tessera map" or run `/tessera:map` again. |
+| You want to start over | Delete the `.tessera` folder in your home folder. |
 
 ## What the map shows
 
 A real map of one person's sessions in share mode: side projects, home and learning.
-
-![Overview: four headlines, each a cluster of projects and activities](docs/map-overview.png)
+Zoom in by clicking or scrolling, light up a method to see where you used it:
 
 | Zoom into a headline | Light up a method |
 |---|---|
