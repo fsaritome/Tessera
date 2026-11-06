@@ -47,7 +47,7 @@ def _cmd_scan(cfg, args) -> int:
 
 
 def _cmd_status(cfg, args) -> int:
-    from . import extract, handoff
+    from . import extract, handoff, terms
     from .graph import MergeInput
     from .store import Store
 
@@ -68,6 +68,8 @@ def _cmd_status(cfg, args) -> int:
         "batches_open": len(open_batches),
         "batches_answered": len(answered),
         "merge_current": merge_fresh,
+        "accepted": terms.accepted(cfg),
+        "map_running": (cfg.state_dir / "map.json").is_file(),
     }
     if args.json:
         print(json.dumps(info))
@@ -193,6 +195,34 @@ def _cmd_map(cfg, args) -> int:
     return 0
 
 
+def _cmd_stop(cfg, args) -> int:
+    from .ui import stop
+
+    print(stop(cfg))
+    return 0
+
+
+def _cmd_terms(cfg, args) -> int:
+    from . import terms
+
+    print(terms.TERMS)
+    state = "You agreed to these terms." if terms.accepted(cfg) else "Not agreed yet."
+    print(state + ("" if terms.accepted(cfg) else "  Agree with: tessera accept --yes"))
+    return 0
+
+
+def _cmd_accept(cfg, args) -> int:
+    from . import terms
+
+    if not args.yes:
+        print(terms.TERMS)
+        print("To agree, run: tessera accept --yes")
+        return 1
+    terms.accept(cfg, _version())
+    print("Thanks, your agreement is recorded. Delete ~/.tessera to withdraw it with all data.")
+    return 0
+
+
 def _cmd_essence(cfg, args) -> int:
     from . import extract
 
@@ -288,6 +318,16 @@ def main(argv: list[str] | None = None) -> int:
         help="safe to show others: no work projects, only shareable activities",
     )
     sp.set_defaults(func=_cmd_map)
+
+    sp = sub.add_parser("stop", help="stop the map server this Tessera home started")
+    sp.set_defaults(func=_cmd_stop)
+
+    sp = sub.add_parser("terms", help="show the terms of use and whether you agreed")
+    sp.set_defaults(func=_cmd_terms)
+
+    sp = sub.add_parser("accept", help="agree to the terms of use")
+    sp.add_argument("--yes", action="store_true", help="record that you agree")
+    sp.set_defaults(func=_cmd_accept)
 
     sp = sub.add_parser("essence", help="text summary of everything extracted")
     sp.add_argument("--top", type=int, default=25)

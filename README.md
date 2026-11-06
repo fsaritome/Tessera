@@ -17,6 +17,10 @@ methods that connect them. Each session is one tile; Tessera puts the mosaic tog
   replaced before Claude reads anything, and the map refers to people by role, not name.
 - **Honest.** Every activity traces back to a session. Nothing is invented, nothing is posted.
 
+> **Use at your own risk.** Tessera is free software provided as is, without warranty. It
+> reads your Claude sessions, and redaction catches patterns, not everything. Before its
+> first run it shows the [terms](#disclaimer) and asks you to agree.
+
 ![A real Tessera map: four headlines, each a cluster of projects and activities](docs/map-overview.png)
 
 ## Don't trust it? Let your own Claude check it first
@@ -34,11 +38,11 @@ do not run, install or import anything from it. Review it as a security auditor 
 4. What can leave my computer, and through which path.
 5. Anything that runs on its own: hooks, MCP servers, install or build scripts.
 6. Anything suspicious, risky or worth fixing.
-Quote file and line for every claim. Then check the tag v0.2.2 is the same code you read.
+Quote file and line for every claim. Then check the tag v0.3.0 is the same code you read.
 ```
 
 To install exactly the version you checked, use the marketplace with its version tag,
-`fsaritome/Tessera#v0.2.2` instead of `fsaritome/Tessera`, in the terminal commands below.
+`fsaritome/Tessera#v0.3.0` instead of `fsaritome/Tessera`, in the terminal commands below.
 A tagged version never changes, even if the repository does later.
 
 ## Install
@@ -117,8 +121,12 @@ folder you started it in, that is its normal first-start check.
 /tessera:map
 ```
 
+New here? **`/tessera:start`** explains Tessera in the chat, shows all commands and
+suggests your next step.
+
 ### What you will see
 
+The first time, Claude shows the [terms](#disclaimer) and asks you to agree; reply `yes`.
 Claude scans your sessions of the last 30 days and tells you how many batches it will
 read and what that costs, before it starts:
 
@@ -130,6 +138,22 @@ You will see Claude write its answers for each batch; that is normal. A few minu
 
 Open http://127.0.0.1:18765 in your browser. Run `/tessera:map` again any time: sessions
 it has already read are never read again. `/tessera:map 365` adds the rest of the year.
+
+### Tessera commands in Claude
+
+| Command | What it does | Uses your plan? |
+|---|---|---|
+| `/tessera:start` | What Tessera is, all commands, where you stand, the next step | No |
+| `/tessera:estimate [days]` | Count sessions, batches and tokens; reads nothing | No |
+| `/tessera:map [days]` | Read new sessions and build or update the map (default 30 days). Never reads a session twice, and continues a run that stopped halfway | Yes |
+| `/tessera:open [share]` | Open the existing map again; `share` hides job projects and private activities | No |
+| `/tessera:stop` | Stop the map running in the background | No |
+| `/tessera:update` | Check for a newer Tessera and install it | No |
+
+Where Tessera needs a decision (agreeing to the terms, building the map after an
+estimate, a large run), Claude asks with buttons you click, and `/tessera:start` ends with
+a menu of buttons too. The map keeps running in the background after `/tessera:map` or
+`/tessera:open`, until you use `/tessera:stop` or close the session.
 
 ### Update or remove
 
@@ -162,7 +186,8 @@ what is new.
 | `/tessera:map` is unknown | Type `/reload-plugins`. If that does not help, run the two `/plugin` commands again. |
 | Install or update fails: "could not be replaced: it is in use" | An open Tessera map from version 0.2.0 or older holds the folder. Close the Claude Code window that started it (or restart your computer), then install again. From 0.2.1 on this cannot happen. |
 | "Nothing to do" | Everything in the time window is already read. `/tessera:map 365` looks further back. |
-| The map page does not open | Claude starts it at the end; ask it "open the Tessera map" or run `/tessera:map` again. |
+| The map page does not open | `/tessera:open` starts it again without reading anything. |
+| "Port 18765 is already in use" | A map is already running: open or reload http://127.0.0.1:18765, or `/tessera:stop` it first. |
 | You want to start over | Delete the `.tessera` folder in your home folder. |
 
 ## What the map shows
@@ -271,6 +296,8 @@ sources:
 | `tessera extract --engine api\|local` | Extract without Claude Code |
 | `tessera merge` | Headlines, projects and methods |
 | `tessera map [--share]` | Open the map (`--share`: only what you would show others) |
+| `tessera stop` | Stop the running map |
+| `tessera terms` / `accept --yes` | Show the terms of use / agree to them |
 | `tessera suggest` | Names and hosts that still get through redaction |
 | `tessera check-redact "text"` | Try the redaction rules on any text |
 
@@ -282,6 +309,22 @@ sources:
 - Works on Windows, macOS and Linux; the tests run on all three for every change. The
   Claude desktop app (and with it Cowork) does not exist for Linux, so there Tessera reads
   Claude Code sessions and claude.ai exports only.
+
+## Disclaimer
+
+Before its first run, Tessera shows these terms and asks you to agree
+(`tessera terms` shows them again):
+
+- Tessera is free software under the MIT license, provided "as is", without warranty of
+  any kind. You use it entirely at your own risk.
+- It reads the Claude session files on your computer and lets your own Claude read
+  redacted versions of them. Redaction catches patterns (keys, passwords, hosts, emails,
+  paths and more), not everything: names or confidential details can remain.
+- Reading uses your own Claude plan and its limits. You decide when it runs.
+- You are responsible for what you run, for complying with your employer's and
+  Anthropic's rules, and for anything you share, including screenshots of your map.
+- The authors and contributors are not liable for any damage, data loss, costs, account
+  restrictions or disclosure of information arising from its use.
 
 ## License
 

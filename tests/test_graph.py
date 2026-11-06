@@ -180,6 +180,43 @@ def test_share_view_hides_job_private_and_summaries(seeded):
         server.shutdown()
 
 
+def test_map_stop_ends_the_running_map(seeded):
+    import socket
+    import subprocess
+    import sys
+    import time
+
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    code = ("import sys; from tessera.cli import main; "
+            f"sys.exit(main(['map', '--no-browser', '--port', '{port}']))")  # fmt: skip
+    env = {**__import__("os").environ, "TESSERA_HOME": str(seeded.root)}
+    proc = subprocess.Popen([sys.executable, "-c", code], env=env,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # fmt: skip
+    try:
+        for _ in range(100):
+            if (seeded.state_dir / "map.json").is_file():
+                break
+            time.sleep(0.1)
+        assert "Stopped the Tessera map" in ui.stop(seeded)
+        assert proc.wait(timeout=10) is not None  # the process is gone
+        assert not (seeded.state_dir / "map.json").exists()
+        assert ui.stop(seeded) == "No Tessera map is running."
+    finally:
+        proc.kill()
+
+
+def test_map_port_in_use_is_a_clear_message(seeded, capsys):
+    busy = ui.MapServer(("127.0.0.1", 0), ui.make_handler(seeded))
+    try:
+        with pytest.raises(SystemExit):
+            ui.serve(seeded, port=busy.server_address[1], open_browser=False)
+        assert "already in use" in capsys.readouterr().err
+    finally:
+        busy.server_close()
+
+
 def test_map_survives_its_folder_being_deleted(seeded, tmp_path, monkeypatch):
     page = tmp_path / "index.html"
     page.write_text("<title>Tessera</title>", encoding="utf-8")

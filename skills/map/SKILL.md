@@ -2,7 +2,7 @@
 name: map
 description: Build or update the Tessera map of everything the user did with Claude (Claude Code, Cowork, claude.ai export) - scans local session logs, redacts them, extracts projects, methods and lessons, then opens a zoomable map in the browser. Use when the user asks for an overview of their work or AI usage, "what have I been doing", or to update their Tessera map.
 argument-hint: "[days, default 30]"
-allowed-tools: Bash(uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera *) PowerShell(uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera *) Read Write
+allowed-tools: Bash(uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera *) PowerShell(uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera *) Read Write AskUserQuestion Skill
 ---
 
 # Tessera map
@@ -22,13 +22,19 @@ so a running map never blocks a plugin update.)
 If `uv` is missing, stop and tell the user to install it (https://docs.astral.sh/uv/),
 in one sentence. Do not install anything yourself.
 
-Time window: `$ARGUMENTS` days if a number was given, otherwise 30. Call it DAYS.
+Time window: the number in `$ARGUMENTS` (days) if there is one, otherwise 30. Call it DAYS.
 Sessions already read are never read again, so later runs only cost what is new.
 
 ## Steps
 
 Report progress to the user in short single lines ("Scanned 340 sessions", "Batch 3 of 7
 done"), not in paragraphs.
+
+0. **Agreement and resume.** Run `T status --json`.
+   - If `accepted` is false: if `$ARGUMENTS` contains the word `agree`, run `T accept --yes` and continue. Otherwise run `T terms` and show the terms exactly as printed except its last line (the terminal hint). Then ask with the AskUserQuestion tool (question "Do you agree to these terms?", options "Agree and continue" and "Don't agree"). On "Agree and continue", run `T accept --yes` and continue; on anything else, do nothing more. If AskUserQuestion is not available, say "To agree and continue, type `/tessera:map agree`." and stop.
+   - If `batches_answered` is above 0, an earlier run stopped halfway: run `T import` first, so
+     the answers already written are kept and not paid for twice, then continue.
+   - If `map_running` is true, run `T stop` before step 6 restarts the map.
 
 1. **Scan.** Run `T scan --days DAYS`. It prints how many sessions it found per source.
    If claude.ai shows "no export zip found", mention once that the user can add their
@@ -39,8 +45,10 @@ done"), not in paragraphs.
    - "Nothing to do": skip to step 5.
    - Always tell the user in one line: the number of batches and the estimated tokens,
      and that reading them uses their own Claude plan.
-   - More than 15 batches: ask whether to continue, to limit it (then run prepare again
-     with `--limit 60`) or to stop. Otherwise continue without asking.
+   - More than 15 batches: ask with the AskUserQuestion tool, question "This reads N
+     batches, about T tokens of your plan. Continue?", options "Continue", "Only the
+     newest 60 sessions" (then run prepare again with `--limit 60`) and "Stop". Without
+     AskUserQuestion, ask the same in text and wait. Otherwise continue without asking.
 
 3. **Answer each batch.** For every batch file, in order:
    - Read the whole file with Read. It contains the instructions, the JSON shape and the
@@ -66,8 +74,13 @@ done"), not in paragraphs.
 
 6. **Open the map.** Run `T map --no-browser` in the background and tell the user to open
    http://127.0.0.1:18765. Then give a 3-5 line summary: the headlines with their project
-   counts, and the one or two methods that connect the most projects. If DAYS was the
-   default 30, add one line: `/tessera:map 365` adds the rest of the year. End there.
+   counts, and the one or two methods that connect the most projects. End with these
+   lines, short:
+   - The map keeps running in the background. `/tessera:stop` stops it; `/tessera:open`
+     shows it again later without reading anything.
+   - Adding more never reads anything twice: run `/tessera:map` again for new sessions,
+     `/tessera:map 365` for older ones (only if DAYS was below 365), and a claude.ai data
+     export zip left in Downloads is picked up on the next run.
 
 ## Privacy
 

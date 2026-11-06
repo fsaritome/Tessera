@@ -1,6 +1,6 @@
 [project]
 name = "tessera-insights"
-version = "0.2.2"
+version = "0.3.0"
 description = "See what you actually do with Claude: a local, redacted map of your Claude Code, Cowork and claude.ai sessions."
 readme = "README.md"
 license = "MIT"
