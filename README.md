@@ -19,27 +19,83 @@ methods that connect them. Each session is one tile; Tessera puts the mosaic tog
 
 ![A real Tessera map: four headlines, each a cluster of projects and activities](docs/map-overview.png)
 
+## Don't trust it? Let your own Claude check it first
+
+Tessera reads your Claude sessions, so you should know what it does before you install it.
+Paste this into Claude Code or the desktop app's Code tab, in an empty folder. Claude
+downloads the code, runs none of it, and reports back:
+
+```
+Download the repository fsaritome/Tessera from GitHub with git into ./tessera-review and
+do not run, install or import anything from it. Review it as a security auditor and tell me in plain words:
+1. Which files and folders on my computer it reads, and which it writes.
+2. Every network connection it can make, to where, and when.
+3. What the plugin (.claude-plugin/, skills/) lets Claude run, and with which permissions.
+4. What can leave my computer, and through which path.
+5. Anything that runs on its own: hooks, MCP servers, install or build scripts.
+6. Anything suspicious, risky or worth fixing.
+Quote file and line for every claim. Then check the tag v0.2.1 is the same code you read.
+```
+
+To install exactly the version you checked, use the marketplace with its version tag,
+`fsaritome/Tessera#v0.2.1` instead of `fsaritome/Tessera`, in the terminal commands below.
+A tagged version never changes, even if the repository does later.
+
 ## Install
 
-**1. Get the two tools** (once). Paste these into a terminal: PowerShell on Windows,
-Terminal on Mac or Linux.
+Pick the way you use Claude: **A** in the Claude desktop app (no terminal except one line
+for uv), or **B** in a terminal.
 
-[Claude Code](https://code.claude.com/docs/en/quickstart), the Claude you type to:
-
-| Windows (PowerShell) | Mac and Linux |
-|---|---|
-| `irm https://claude.ai/install.ps1 \| iex` | `curl -fsSL https://claude.ai/install.sh \| bash` |
-
-[uv](https://docs.astral.sh/uv/getting-started/installation/), which runs Tessera:
+**First, in both cases: get [uv](https://docs.astral.sh/uv/getting-started/installation/)**,
+the small tool that runs Tessera. Paste this once into a terminal (PowerShell on Windows,
+Terminal on Mac or Linux), then close that terminal:
 
 | Windows (PowerShell) | Mac and Linux |
 |---|---|
 | `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 
-Then **close the terminal and open a new one**, so both commands are found. Type `claude`
-and sign in with your Claude account the first time.
+### A. In the Claude desktop app
 
-**2. Add Tessera.** In Claude Code, type these one at a time and press Enter after each:
+**1. Add the marketplace.** Open **Settings → Customize → Plugins**, click **+ Add** at
+the top right and choose **Add marketplace**:
+
+![Settings, Customize, Plugins: the + Add menu with "Add marketplace"](docs/desktop-add-marketplace.png)
+
+**2. Enter `fsaritome/Tessera`** and click **Sync**:
+
+![The Add marketplace dialog with fsaritome/Tessera in the URL field](docs/desktop-marketplace-url.png)
+
+**3. Click "Add to this computer"** next to Tessera. Tessera reads the sessions on your
+computer, so it has to be installed there:
+
+![Tessera listed with the button "Add to this computer"](docs/desktop-add-to-computer.png)
+
+**4. Make your map.** Start a new session in the **Code** tab, with any folder of your own,
+type `/tessera:map` and press Enter:
+
+![The Code tab with /tessera:map typed into the message box](docs/desktop-run.png)
+
+Claude then works through the same steps as in the terminal, see [what you will see](#what-you-will-see).
+
+### B. In a terminal
+
+**1. Get [Claude Code](https://code.claude.com/docs/en/quickstart)** (once):
+
+| Windows (PowerShell) | Mac and Linux |
+|---|---|
+| `irm https://claude.ai/install.ps1 \| iex` | `curl -fsSL https://claude.ai/install.sh \| bash` |
+
+Then **close the terminal and open a new one**, so `claude` and `uv` are found. Type
+`claude` once and sign in with your Claude account.
+
+**2. Add Tessera** with one command in the terminal:
+
+```
+claude plugin install tessera --marketplace fsaritome/Tessera
+```
+
+Already inside Claude Code? Type these instead, one at a time. The second one opens a
+small menu where **"Install for you (user scope)"** is already selected: press Enter.
 
 ```
 /plugin marketplace add fsaritome/Tessera
@@ -48,23 +104,20 @@ and sign in with your Claude account the first time.
 /plugin install tessera@tessera
 ```
 
-The second command opens a small menu. **"Install for you (user scope)"** is already
-selected: press Enter.
-
 ![The plugin menu after /plugin install, with "Install for you (user scope)" selected](docs/step-install-dialog.png)
-
-When both are done, it looks like this. If Claude Code suggests `/reload-plugins`, type it.
 
 ![Claude Code after adding the marketplace and installing Tessera](docs/step-install.png)
 
-If Claude Code asks whether you trust the folder you started it in, that is its normal
-first-start check.
+If Claude Code suggests `/reload-plugins`, type it. If it asks whether you trust the
+folder you started it in, that is its normal first-start check.
 
-**3. Make your map:**
+**3. Make your map.** Start `claude` and type:
 
 ```
 /tessera:map
 ```
+
+### What you will see
 
 Claude scans your sessions of the last 30 days and tells you how many batches it will
 read and what that costs, before it starts:
@@ -78,19 +131,19 @@ You will see Claude write its answers for each batch; that is normal. A few minu
 Open http://127.0.0.1:18765 in your browser. Run `/tessera:map` again any time: sessions
 it has already read are never read again. `/tessera:map 365` adds the rest of the year.
 
-**In the Claude desktop app:** once installed, Tessera is also there in the app's Code tab.
-Start a Code session and type `/tessera:map`.
+### Update or remove
 
-**Update** to a new version: `/plugin marketplace update tessera`, then
-`/plugin install tessera@tessera`. **Remove** it: `/plugin uninstall tessera@tessera`,
-and delete the `.tessera` folder in your home folder to remove its data too.
+- **Desktop app:** Tessera is listed under **Settings → Customize → Plugins → Yours**.
+- **Terminal:** update with `claude plugin marketplace update tessera` and then
+  `claude plugin update tessera@tessera`; remove with `claude plugin uninstall tessera@tessera`.
+- Delete the `.tessera` folder in your home folder to remove Tessera's data too.
 
 ## What it costs
 
 Tessera itself is free, but Claude reads your sessions **on your own Claude plan**, so it
 uses your plan's limits like any other work in Claude Code. Before reading, Tessera shows
-the number of batches and an estimate. The real run in the pictures above was 30 days on one computer: 58 sessions, 3 batches,
-about 40,000 tokens, done in under four minutes.
+the number of batches and an estimate. The real run in the pictures above was 30 days on
+one computer: 58 sessions, 3 batches, about 40,000 tokens, done in under four minutes.
 
 A batch holds up to about 15,000 tokens. With more than 15 batches, Claude asks you
 before it starts, so a heavy year of use (dozens of batches) never runs by surprise.
