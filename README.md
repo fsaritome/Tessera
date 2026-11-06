@@ -74,10 +74,11 @@ computer, so it has to be installed there:
 
 ![Tessera listed with the button "Add to this computer"](docs/desktop-add-to-computer.png)
 
-**4. Make your map.** Start a new session in the **Code** tab, with any folder of your own,
-type `/tessera:map` and press Enter:
+**4. Start.** Start a new session in the **Code** tab, with any folder of your own, and type
+`/tessera:start`: it explains everything and offers the next step as buttons. All Tessera
+commands are also under **+ → Plugins → Tessera**:
 
-![The Code tab with /tessera:map typed into the message box](docs/desktop-run.png)
+![The + menu in the Code tab: Plugins, Tessera, and the six Tessera commands with descriptions](docs/desktop-plugin-menu.png)
 
 Claude then works through the same steps as in the terminal, see [what you will see](#what-you-will-see).
 
