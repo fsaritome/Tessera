@@ -17,24 +17,54 @@ methods that connect them. Each session is one tile; Tessera puts the mosaic tog
   replaced before Claude reads anything, and the map refers to people by role, not name.
 - **Honest.** Every activity traces back to a session. Nothing is invented, nothing is posted.
 
-## Install (Claude Code)
+## Install
 
-You need [uv](https://docs.astral.sh/uv/) (one command to install). Then, in Claude Code:
+**1. Get the two tools** (once):
+
+- [Claude Code](https://code.claude.com/docs/en/quickstart), signed in with your Claude plan.
+  On Windows, open a *new* terminal after installing it; if `claude` is still not found,
+  add `%USERPROFILE%\.local\bin` to your PATH as the installer says.
+- [uv](https://docs.astral.sh/uv/getting-started/installation/), which runs Tessera.
+
+**2. Add Tessera.** Start Claude Code (`claude` in a terminal) and type, one at a time:
 
 ```
 /plugin marketplace add fsaritome/Tessera
+```
+```
 /plugin install tessera@tessera
 ```
 
-Run it:
+If Claude Code asks whether you trust the folder you started it in, that is its normal
+first-start check.
+
+**3. Make your map:**
 
 ```
 /tessera:map
 ```
 
-Claude scans your sessions, reads them in redacted batches, builds the map and opens it at
-http://127.0.0.1:18765. Run it again any time: only new or changed sessions are read.
-`/tessera:map 30` limits it to the last 30 days.
+Claude scans your sessions of the last 30 days, reads them in redacted batches, builds the
+map and tells you to open http://127.0.0.1:18765. Run it again any time: sessions it has
+already read are never read again. `/tessera:map 365` adds the rest of the year.
+
+**In the Claude desktop app:** once installed, Tessera is also there in the app's Code tab.
+Start a Code session and type `/tessera:map`.
+
+## What it costs
+
+Tessera itself is free, but Claude reads your sessions **on your own Claude plan**, so it
+uses your plan's limits like any other work in Claude Code. Before reading, Tessera shows
+the number of batches and an estimate, and asks you first if there are more than 15:
+
+```
+120 of 120 units to extract, in 9 batches. Redacted before writing.
+Estimated use of your Claude plan: ~140,000 tokens (~15,000 per batch).
+```
+
+A batch is about 15,000 tokens. A month of daily use is often a few batches; a year of
+heavy use can be dozens. Start with the default 30 days and add more once you like the
+map. Later runs only read what is new.
 
 ## What the map shows
 
@@ -151,7 +181,9 @@ sources:
 - The Claude desktop app's session folder is not a documented format. If an app update
   changes it, Tessera skips what it cannot read instead of failing.
 - claude.ai chats only arrive through the data export.
-- Built and tested on Windows; macOS and Linux paths are included but less tested.
+- Works on Windows, macOS and Linux; the tests run on all three for every change. The
+  Claude desktop app (and with it Cowork) does not exist for Linux, so there Tessera reads
+  Claude Code sessions and claude.ai exports only.
 
 ## License
 

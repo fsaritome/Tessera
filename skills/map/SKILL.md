@@ -1,8 +1,8 @@
 ---
 name: map
 description: Build or update the Tessera map of everything the user did with Claude (Claude Code, Cowork, claude.ai export) - scans local session logs, redacts them, extracts projects, methods and lessons, then opens a zoomable map in the browser. Use when the user asks for an overview of their work or AI usage, "what have I been doing", or to update their Tessera map.
-argument-hint: "[days, default 365]"
-allowed-tools: Bash(uv run --quiet --project ${CLAUDE_PLUGIN_ROOT} tessera *) Read Write
+argument-hint: "[days, default 30]"
+allowed-tools: Bash(uv run --quiet --project ${CLAUDE_PLUGIN_ROOT} tessera *) PowerShell(uv run --quiet --project ${CLAUDE_PLUGIN_ROOT} tessera *) Read Write
 ---
 
 # Tessera map
@@ -19,7 +19,8 @@ In every command below, `T` means exactly:
 If `uv` is missing, stop and tell the user to install it (https://docs.astral.sh/uv/),
 in one sentence. Do not install anything yourself.
 
-Time window: `$ARGUMENTS` days if a number was given, otherwise 365. Call it DAYS.
+Time window: `$ARGUMENTS` days if a number was given, otherwise 30. Call it DAYS.
+Sessions already read are never read again, so later runs only cost what is new.
 
 ## Steps
 
@@ -31,10 +32,12 @@ done"), not in paragraphs.
    claude.ai chats by requesting the data export on claude.ai (Settings, Privacy) and
    leaving the zip in Downloads. Do not wait for it.
 
-2. **Prepare.** Run `T prepare --days DAYS`. It lists batch files.
+2. **Prepare.** Run `T prepare --days DAYS`. It lists batch files and estimates tokens.
    - "Nothing to do": skip to step 5.
-   - More than 15 batches: tell the user the count, that this uses their own Claude plan,
-     and ask whether to continue or to limit it (then use `--limit 60`). Otherwise continue.
+   - Always tell the user in one line: the number of batches and the estimated tokens,
+     and that reading them uses their own Claude plan.
+   - More than 15 batches: ask whether to continue, to limit it (then run prepare again
+     with `--limit 60`) or to stop. Otherwise continue without asking.
 
 3. **Answer each batch.** For every batch file, in order:
    - Read the whole file with Read. It contains the instructions, the JSON shape and the
@@ -60,7 +63,8 @@ done"), not in paragraphs.
 
 6. **Open the map.** Run `T map --no-browser` in the background and tell the user to open
    http://127.0.0.1:18765. Then give a 3-5 line summary: the headlines with their project
-   counts, and the one or two methods that connect the most projects. End there.
+   counts, and the one or two methods that connect the most projects. If DAYS was the
+   default 30, add one line: `/tessera:map 365` adds the rest of the year. End there.
 
 ## Privacy
 

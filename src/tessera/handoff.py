@@ -57,6 +57,11 @@ class Prepared:
     chars: int
     total_units: int
     stats: dict[str, int] = field(default_factory=dict)
+    tokens: int = 0  # rough total for Claude: reading every batch, answering, working
+
+
+# Per batch beyond the unit text: Claude's JSON answer plus its own reading and tool calls.
+ANSWER_AND_WORK_TOKENS = 4000
 
 
 def prepare(cfg: Config, days: int = 365, limit: int | None = None) -> Prepared:
@@ -110,7 +115,9 @@ def prepare(cfg: Config, days: int = 365, limit: int | None = None) -> Prepared:
         manifest["batches"][path.name] = {u.id: u.hash for u in group}
         paths.append(path)
     (wd / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
-    return Prepared(paths, len(todo), sum(len(u.text) for u in todo), len(units), stats)
+    written = sum(p.stat().st_size for p in paths)
+    tokens = written // 4 + len(paths) * ANSWER_AND_WORK_TOKENS
+    return Prepared(paths, len(todo), sum(len(u.text) for u in todo), len(units), stats, tokens)
 
 
 @dataclass

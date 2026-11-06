@@ -1,0 +1,29 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Lint
+        run: uv run --quiet ruff check src tests
+      - name: Tests
+        run: uv run --quiet pytest -q
+      - name: CLI on an empty home
+        shell: bash
+        run: |
+          export TESSERA_HOME="$RUNNER_TEMP/tessera-home"
+          uv run --quiet tessera scan --days 30
+          uv run --quiet tessera status

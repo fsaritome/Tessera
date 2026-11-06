@@ -1,7 +1,10 @@
 import json
+import shutil
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
+
+import pytest
 
 from tessera.adapters import claude_code, git, project_name
 
@@ -120,6 +123,19 @@ def _git(repo, *args):
     subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
 
 
+def test_git_missing_is_a_warning_not_a_crash(cfg, tmp_path, monkeypatch, capsys):
+    (tmp_path / "Repo" / ".git").mkdir(parents=True)
+    cfg.settings.setdefault("sources", {})["git"] = {"repos": [str(tmp_path / "Repo")]}
+
+    def no_git(*a, **k):
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr(git.subprocess, "run", no_git)
+    assert git.ingest(cfg, datetime(2000, 1, 1, tzinfo=UTC)) == []
+    assert "git is not installed" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
 def test_git_adapter_reads_commits(cfg, tmp_path):
     repo = tmp_path / "DemoRepo"
     repo.mkdir()

@@ -21,14 +21,17 @@ _FMT = f"{_RS}%H{_US}%aI{_US}%ae{_US}%D{_US}%s{_US}%b{_US}"
 
 
 def _git(repo: Path, *args: str) -> str:
-    res = subprocess.run(
-        ["git", "-C", str(repo), *args],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
+    try:
+        res = subprocess.run(
+            ["git", "-C", str(repo), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except FileNotFoundError:
+        raise RuntimeError("git is not installed") from None
     if res.returncode != 0:
         raise RuntimeError(res.stderr.strip() or f"git {args[0]} failed")
     return res.stdout
