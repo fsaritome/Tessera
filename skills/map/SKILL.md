@@ -2,7 +2,7 @@
 name: map
 description: Build or update the Tessera map of everything the user did with Claude (Claude Code, Cowork, claude.ai export) - scans local session logs, redacts them, extracts projects, methods and lessons, then opens a zoomable map in the browser. Use when the user asks for an overview of their work or AI usage, "what have I been doing", or to update their Tessera map.
 argument-hint: "[days, default 30]"
-allowed-tools: Bash(uv run --quiet --project ${CLAUDE_PLUGIN_ROOT} tessera *) PowerShell(uv run --quiet --project ${CLAUDE_PLUGIN_ROOT} tessera *) Read Write
+allowed-tools: Bash(uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera *) PowerShell(uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera *) Read Write
 ---
 
 # Tessera map
@@ -14,7 +14,10 @@ before storing it. Nothing is sent anywhere except through this Claude Code sess
 
 In every command below, `T` means exactly:
 
-    uv run --quiet --project ${CLAUDE_PLUGIN_ROOT} tessera
+    uvx --quiet --from ${CLAUDE_PLUGIN_ROOT} tessera
+
+(uvx keeps Tessera's Python environment in uv's own cache, outside the plugin folder,
+so a running map never blocks a plugin update.)
 
 If `uv` is missing, stop and tell the user to install it (https://docs.astral.sh/uv/),
 in one sentence. Do not install anything yourself.

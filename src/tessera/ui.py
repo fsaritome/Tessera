@@ -28,6 +28,9 @@ PAGE = Path(__file__).parent / "web" / "index.html"
 def make_handler(
     cfg: Config, client: Any = None, share: bool = False
 ) -> type[BaseHTTPRequestHandler]:
+    # Read once at start: a plugin update may delete this folder while the map is open.
+    page = PAGE.read_bytes()
+
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt: str, *args: Any) -> None:  # keep the console quiet
             pass
@@ -46,7 +49,7 @@ def make_handler(
         def do_GET(self) -> None:
             path = self.path.split("?", 1)[0]
             if path == "/":
-                body = (None if share or not ext else ext.page(cfg)) or PAGE.read_bytes()
+                body = (None if share or not ext else ext.page(cfg)) or page
                 self._send(HTTPStatus.OK, body, "text/html; charset=utf-8")
             elif path == "/api/graph":
                 try:

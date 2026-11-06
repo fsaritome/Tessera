@@ -48,6 +48,15 @@ and sign in with your Claude account the first time.
 /plugin install tessera@tessera
 ```
 
+The second command opens a small menu. **"Install for you (user scope)"** is already
+selected: press Enter.
+
+![The plugin menu after /plugin install, with "Install for you (user scope)" selected](docs/step-install-dialog.png)
+
+When both are done, it looks like this. If Claude Code suggests `/reload-plugins`, type it.
+
+![Claude Code after adding the marketplace and installing Tessera](docs/step-install.png)
+
 If Claude Code asks whether you trust the folder you started it in, that is its normal
 first-start check.
 
@@ -57,9 +66,17 @@ first-start check.
 /tessera:map
 ```
 
-Claude scans your sessions of the last 30 days, reads them in redacted batches, builds the
-map and tells you to open http://127.0.0.1:18765. Run it again any time: sessions it has
-already read are never read again. `/tessera:map 365` adds the rest of the year.
+Claude scans your sessions of the last 30 days and tells you how many batches it will
+read and what that costs, before it starts:
+
+![Tessera scanned 58 sessions; 3 batches, about 40k tokens, reading them uses your own Claude plan](docs/step-run.png)
+
+You will see Claude write its answers for each batch; that is normal. A few minutes later:
+
+![Your map is built and running at http://127.0.0.1:18765](docs/step-done.png)
+
+Open http://127.0.0.1:18765 in your browser. Run `/tessera:map` again any time: sessions
+it has already read are never read again. `/tessera:map 365` adds the rest of the year.
 
 **In the Claude desktop app:** once installed, Tessera is also there in the app's Code tab.
 Start a Code session and type `/tessera:map`.
@@ -72,12 +89,8 @@ and delete the `.tessera` folder in your home folder to remove its data too.
 
 Tessera itself is free, but Claude reads your sessions **on your own Claude plan**, so it
 uses your plan's limits like any other work in Claude Code. Before reading, Tessera shows
-the number of batches and an estimate. This is a real one, for 30 days on one computer:
-
-```
-7 of 11 units to extract, in 1 batch. Redacted before writing.
-Estimated use of your Claude plan: ~10,195 tokens (~10,195 per batch).
-```
+the number of batches and an estimate. The real run in the pictures above was 30 days on one computer: 58 sessions, 3 batches,
+about 40,000 tokens, done in under four minutes.
 
 A batch holds up to about 15,000 tokens. With more than 15 batches, Claude asks you
 before it starts, so a heavy year of use (dozens of batches) never runs by surprise.
@@ -91,6 +104,7 @@ what is new.
 | `claude` or `uv` is "not recognized" / "command not found" | Close the terminal and open a new one. On Windows, if `claude` is still missing, add `%USERPROFILE%\.local\bin` to your PATH (the installer prints this). |
 | Claude Code asks whether you trust the folder | Normal first-start check. Choose "Yes" for a folder of your own, e.g. your home folder. |
 | `/tessera:map` is unknown | Type `/reload-plugins`. If that does not help, run the two `/plugin` commands again. |
+| Install or update fails: "could not be replaced: it is in use" | An open Tessera map from version 0.2.0 or older holds the folder. Close the Claude Code window that started it (or restart your computer), then install again. From 0.2.1 on this cannot happen. |
 | "Nothing to do" | Everything in the time window is already read. `/tessera:map 365` looks further back. |
 | The map page does not open | Claude starts it at the end; ask it "open the Tessera map" or run `/tessera:map` again. |
 | You want to start over | Delete the `.tessera` folder in your home folder. |

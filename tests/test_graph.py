@@ -180,6 +180,20 @@ def test_share_view_hides_job_private_and_summaries(seeded):
         server.shutdown()
 
 
+def test_map_survives_its_folder_being_deleted(seeded, tmp_path, monkeypatch):
+    page = tmp_path / "index.html"
+    page.write_text("<title>Tessera</title>", encoding="utf-8")
+    monkeypatch.setattr(ui, "PAGE", page)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), ui.make_handler(seeded, share=True))
+    page.unlink()  # a plugin update removed the old version's folder
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{server.server_address[1]}/"
+        assert b"<title>Tessera</title>" in urllib.request.urlopen(url).read()
+    finally:
+        server.shutdown()
+
+
 def test_map_serves_page_and_graph_only(seeded):
     _ready(seeded)
     server = ThreadingHTTPServer(("127.0.0.1", 0), ui.make_handler(seeded, client=NoClient()))
