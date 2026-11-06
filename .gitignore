@@ -1,0 +1,25 @@
+# Raw data and outputs — never commit
+inbox/
+out/
+state/
+
+# Real term lists are confidential (client names, colleagues, hosts).
+# Only the *.example.txt templates are committed.
+config/redact/terms/*.txt
+!config/redact/terms/*.example.txt
+config/*.local.yaml
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+
+# Real stand-in and forbidden lists name real systems; only *.example.txt are committed.
+config/redact/pseudonyms.txt
+config/redact/forbidden.txt
+
+# Leak-scan list for publishing: built from session content, stays local
+tools/publish-forbidden.txt

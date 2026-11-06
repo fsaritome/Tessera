@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tessera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f5f1;--panel:#ffffff;--text:#1f1e1d;--muted:#73726c;--faint:#a9a79f;--border:#e6e4dd;--accent:#2f6fd0;--hl:#ef9f27;--err:#b42318;--chip:#f0eee8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--panel:#1f1e1d;--text:#ecebe6;--muted:#a3a29c;--faint:#6b6a65;--border:#2f2e2b;--accent:#7aa7ea;--hl:#fac775;--err:#f09595;--chip:#2a2927}}
+:root[data-theme="dark"]{--bg:#161615;--panel:#1f1e1d;--text:#ecebe6;--muted:#a3a29c;--faint:#6b6a65;--border:#2f2e2b;--accent:#7aa7ea;--hl:#fac775;--err:#f09595;--chip:#2a2927}
+:root[data-theme="light"]{--bg:#f6f5f1;--panel:#ffffff;--text:#1f1e1d;--muted:#73726c;--faint:#a9a79f;--border:#e6e4dd;--accent:#2f6fd0;--hl:#ef9f27;--err:#b42318;--chip:#f0eee8}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:18px;padding:14px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+header h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em}
+#stats{color:var(--muted);font-size:13px}
+#crumbs{display:flex;gap:6px;align-items:center;font-size:13px;margin-left:auto;flex-wrap:wrap}
+#crumbs button{border:0;background:none;color:var(--accent);cursor:pointer;padding:0;font:inherit}
+#crumbs span.sep{color:var(--faint)}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 400px;min-height:0}
+#mapwrap{position:relative;min-height:0}
+#map{width:100%;height:100%;display:block;cursor:zoom-in}
+#hint{position:absolute;left:18px;bottom:14px;font-size:12px;color:var(--faint)}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12.5px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.12);opacity:0;transition:opacity .12s}
+aside{border-left:1px solid var(--border);background:var(--panel);overflow:auto;padding:18px 20px 28px}
+h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 8px}
+h2:first-child{margin-top:0}
+.card h3{margin:0 0 4px;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.meta{color:var(--muted);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip .n{color:var(--muted);font-size:11.5px}
+.chip.on{background:var(--hl);border-color:var(--hl);color:#2c1d03}.chip.on .n{color:#5a3d08}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:8px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.6;cursor:default}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+select,textarea{font:inherit;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 8px}
+textarea{width:100%;resize:vertical}
+.list{margin:8px 0 0;padding:0;list-style:none}
+.list li{padding:7px 0;border-top:1px solid var(--border);font-size:13px}
+.list li .how{color:var(--muted);font-size:12px}
+.err{color:var(--err)}
+.muted{color:var(--muted)}
+@media (max-width:900px){main{grid-template-columns:1fr}#mapwrap{height:70vh}aside{border-left:0;border-top:1px solid var(--border)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Tessera</h1><span id="stats">loading…</span>
+  <nav id="crumbs"></nav>
+</header>
+<main>
+  <div id="mapwrap">
+    <svg id="map"></svg>
+    <div id="tip"></div>
+    <div id="hint">Click or scroll to zoom in · background, scroll back or Esc to zoom out</div>
+  </div>
+  <aside>
+    <h2>In focus</h2>
+    <div class="card" id="focus"></div>
+    <h2>Methods <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">· click to light up</span></h2>
+    <div class="chips" id="methods"></div>
+  </aside>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const PALETTE=["#7F77DD","#1D9E75","#D85A30","#378ADD","#D4537E","#BA7517","#639922","#5DCAA5"];
+/* Deep links: ?focus=Headline/Project  &method=Name  &theme=dark|light */
+const PARAMS=new URLSearchParams(location.search);
+const THEME=PARAMS.get("theme");
+if(THEME==="dark"||THEME==="light")document.documentElement.dataset.theme=THEME;
+const dark=THEME?THEME==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+const INK=dark?"#ecebe6":"#1f1e1d", MUTED=dark?"#a3a29c":"#73726c", HALO=dark?"#161615":"#f6f5f1";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let highlight=null, G=null, root, focus, view, size, svg, gCircles, gLabels, node, label, animating=false;
+
+function colorOf(d){const h=d.ancestors().find(a=>a.depth===1);return h?h.data.color:"#888"}
+function alpha(c,a){const x=d3.color(c);x.opacity=a;return x+""}
+function uses(d,m){return d.data.type==="activity"?d.data.methods.includes(m):d.leaves().some(l=>l.data.methods&&l.data.methods.includes(m))}
+
+function fill(d){
+  const c=colorOf(d),t=d.data.type;
+  if(highlight){const on=uses(d,highlight);
+    if(t==="activity")return on?alpha("#EF9F27",.95):alpha(c,.10);
+    return alpha(on?"#EF9F27":c,t==="headline"?.06:.09);}
+  if(t==="headline")return alpha(c,.10);
+  if(t==="project")return alpha(c,.20);
+  return d.data.public?alpha(c,.88):alpha(c,.28);
+}
+function stroke(d){
+  const c=colorOf(d);
+  if(highlight&&uses(d,highlight))return "#EF9F27";
+  return d.data.type==="activity"?(d.data.public?"none":alpha(c,.9)):alpha(c,.55);
+}
+function key(d){const t=d.data.type;return t==="activity"?"a:"+d.data.id:t==="project"?"p:"+d.data.name:"h:"+d.data.name}
+
+function wrap(text,max){const w=text.split(/\s+/),lines=[];let cur="";
+  for(const x of w){if((cur+" "+x).trim().length>max){if(cur)lines.push(cur);cur=x}else cur=(cur+" "+x).trim();if(lines.length===3)break}
+  if(lines.length<3&&cur)lines.push(cur);if(lines.length===3&&w.join(" ").length>lines.join(" ").length)lines[2]=lines[2].replace(/\W*$/,"")+"…";return lines}
+
+function build(data){
+  data.children.forEach((h,i)=>h.color=PALETTE[i%PALETTE.length]);
+  const box=$("mapwrap").getBoundingClientRect(); size=Math.max(320,Math.min(box.width,box.height));
+  root=d3.pack().size([size,size]).padding(d=>d.depth===0?14:d.depth===1?9:3)(
+    d3.hierarchy(data).sum(d=>d.value||0).sort((a,b)=>b.value-a.value));
+  focus=root;
+  svg=d3.select("#map").attr("viewBox",[-box.width/2,-box.height/2,box.width,box.height]);
+  svg.selectAll("*").remove();
+  gCircles=svg.append("g"); gLabels=svg.append("g").attr("pointer-events","none");
+  node=gCircles.selectAll("circle").data(root.descendants().slice(1)).join("circle")
+    .attr("fill",fill).attr("stroke",stroke).attr("stroke-width",d=>d.data.type==="activity"?1:1.2)
+    .attr("stroke-dasharray",d=>d.data.type==="activity"&&!d.data.public?"3 2":null)
+    .style("cursor","pointer")
+    .on("mouseover",(e,d)=>tip(e,d)).on("mousemove",(e,d)=>tip(e,d)).on("mouseout",()=>$("tip").style.opacity=0)
+    .on("click",(e,d)=>{e.stopPropagation();
+      if(d===focus){zoom(d.parent||root);return}
+      const step=d.ancestors().find(a=>a.parent===focus)||d;  /* always one level deeper */
+      if(step.data.type==="activity")show(step);else zoom(step)});
+  label=gLabels.selectAll("g").data(root.descendants().slice(1)).join("g").style("opacity",d=>d.parent===root?1:0);
+  label.each(function(d){const g=d3.select(this),t=d.data.type;
+    const lines=t==="activity"?wrap(d.data.name,18):t==="project"?wrap(d.data.name,16):[d.data.name];
+    const tx=g.append("text").attr("text-anchor","middle").attr("fill",t==="activity"&&d.data.public?"#fff":INK)
+      .attr("font-weight",t==="activity"?400:600).attr("paint-order","stroke").attr("stroke",t==="activity"&&d.data.public?"none":HALO).attr("stroke-width",3);
+    lines.forEach((l,i)=>tx.append("tspan").attr("x",0).attr("dy",i?"1.15em":0).text(l));
+    if(t==="headline"){const n=d.children.length,a=d.leaves().length;
+      tx.append("tspan").attr("x",0).attr("dy","1.35em").attr("font-weight",400).attr("fill",MUTED).text(`${n} project${n===1?"":"s"} · ${a} activit${a===1?"y":"ies"}`)}
+    d.lines=lines.length+(t==="headline"?1:0)});
+  svg.on("click",()=>{if(focus!==root)zoom(focus.parent)});
+  svg.on("wheel",e=>{e.preventDefault();if(animating)return;
+    if(e.deltaY>0){if(focus!==root)zoom(focus.parent);return}
+    const [mx,my]=d3.pointer(e,svg.node()),k=size/view[2];
+    const hit=(focus.children||[]).find(c=>Math.hypot((c.x-view[0])*k-mx,(c.y-view[1])*k-my)<c.r*k);
+    if(hit&&hit.children)zoom(hit)},{passive:false});
+  zoomTo([root.x,root.y,root.r*2]); show(root); crumbs();
+}
+function zoomTo(v){
+  const k=size/v[2]; view=v;
+  node.attr("transform",d=>`translate(${(d.x-v[0])*k},${(d.y-v[1])*k})`).attr("r",d=>d.r*k);
+  label.attr("transform",d=>{const fs=fontSize(d,k);return `translate(${(d.x-v[0])*k},${(d.y-v[1])*k-((d.lines-1)*fs*1.15)/2+fs*.35})`})
+    .attr("font-size",d=>fontSize(d,k))
+    .style("display",d=>d.parent===focus&&d.r*k>(d.data.type==="activity"?26:18)?null:"none");
+}
+function fontSize(d,k){const r=d.r*k,t=d.data.type;
+  if(t==="headline")return Math.max(13,Math.min(22,r/5.5));
+  if(t==="project")return Math.max(11,Math.min(17,r/4.5));
+  return Math.max(9.5,Math.min(13,r/4.2))}
+function zoom(d){
+  if(!d)return; focus=d; animating=true;
+  svg.transition().duration(650).ease(d3.easeCubicInOut).tween("zoom",()=>{const i=d3.interpolateZoom(view,[d.x,d.y,d.r*2]);return t=>zoomTo(i(t))})
+    .on("end",()=>{animating=false;zoomTo(view)});
+  label.transition().duration(450).style("opacity",x=>x.parent===focus?1:0);
+  $("map").style.cursor=d===root?"zoom-in":"zoom-out";
+  show(d); crumbs();
+}
+function crumbs(){
+  const path=focus.ancestors().reverse();
+  $("crumbs").innerHTML=path.map((d,i)=>i===path.length-1?`<strong>${esc(d.data.name)}</strong>`:`<button data-i="${i}">${esc(d.data.name)}</button><span class="sep">›</span>`).join("");
+  $("crumbs").querySelectorAll("button").forEach(b=>b.onclick=()=>zoom(path[+b.dataset.i]));
+}
+function tip(e,d){
+  const t=$("tip"),[x,y]=d3.pointer(e,$("mapwrap")),D=d.data;
+  t.innerHTML=D.type==="activity"?`<strong>${esc(D.name)}</strong><br><span class="muted">${esc(D.how.join(" · "))}</span>`:
+    `<strong>${esc(D.name)}</strong><br><span class="muted">${D.type==="headline"?d.children.length+(d.children.length===1?" project · ":" projects · "):""}${d.leaves().length} activit${d.leaves().length===1?"y":"ies"}</span>`;
+  t.style.left=Math.min(x+14,$("mapwrap").clientWidth-310)+"px";t.style.top=(y+14)+"px";t.style.opacity=1;
+}
+function show(d){
+  const D=d.data,t=D.type;
+  const add="";
+  let body="";
+  if(t==="root")body=`<h3>Everything at a glance</h3><div class="meta">${d.children.length} headlines · ${d.descendants().filter(x=>x.data.type==="project").length} projects · ${d.leaves().length} activities</div>`+
+    `<ul class="list">${d.children.map(h=>`<li><strong>${esc(h.data.name)}</strong><br><span class="how">${esc(h.data.summary||"")}</span></li>`).join("")}</ul>`;
+  else if(t==="headline")body=`<h3>${esc(D.name)}</h3><div class="meta">${esc(D.summary||"")}</div>${add}<ul class="list">${d.children.map(p=>`<li><strong>${esc(p.data.name)}</strong> <span class="muted">· ${p.leaves().length}</span><br><span class="how">${esc(p.data.summary)}</span></li>`).join("")}</ul>`;
+  else if(t==="project")body=`<h3>${esc(D.name)}</h3><div class="meta">${D.kind==="job"?"Work":"Private"} · ${d.leaves().length} activities · ${esc(D.first)} – ${esc(D.last)}</div><p style="margin:8px 0 0">${esc(D.summary)}</p>${add}`+
+    `<ul class="list">${d.leaves().sort((a,b)=>b.data.last.localeCompare(a.data.last)).map(a=>`<li>${esc(a.data.name)}<br><span class="how">${esc(a.data.how.join(" · "))}</span></li>`).join("")}</ul>`;
+  else body=`<h3 style="font-size:14.5px">${esc(D.name)}</h3><div class="meta">${esc(d.parent.data.name)} · ${esc(D.last)} · ${esc(D.source)} · ${D.public?"shareable":"private"}</div>`+
+    `<p style="margin:8px 0 4px"><span class="muted">How:</span> ${esc(D.how.join(" · "))}</p>${D.outcome?`<p style="margin:4px 0"><span class="muted">Result:</span> ${esc(D.outcome)}</p>`:""}${D.lesson?`<p style="margin:4px 0"><span class="muted">Lesson:</span> ${esc(D.lesson)}</p>`:""}${add}`;
+  $("focus").innerHTML=body;
+}
+function renderMethods(){
+  $("methods").innerHTML=G.methods.map(m=>`<span class="chip${highlight===m.name?" on":""}" data-m="${esc(m.name)}" title="${esc(m.summary)}">${esc(m.name)} <span class="n">${m.activities}</span></span>`).join("");
+  $("methods").querySelectorAll(".chip").forEach(c=>c.onclick=e=>{const m=c.dataset.m;
+    highlight=highlight===m?null:m; node.attr("fill",fill).attr("stroke",stroke); renderMethods();});
+}
+addEventListener("keydown",e=>{if(e.key==="Escape"&&focus&&focus!==root)zoom(focus.parent)});
+function applyLink(){
+  const m=PARAMS.get("method");
+  if(m&&G.methods.some(x=>x.name===m)){highlight=m;node.attr("fill",fill).attr("stroke",stroke);renderMethods();}
+  const f=PARAMS.get("focus"); if(!f)return;
+  let target=root;
+  for(const part of f.split("/")){const c=(target.children||[]).find(x=>x.data.name===part);if(!c)break;target=c}
+  if(target===root)return;
+  focus=target; label.style("opacity",x=>x.parent===focus?1:0); zoomTo([target.x,target.y,target.r*2]);
+  show(target); crumbs(); $("map").style.cursor="zoom-out";
+}
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>G&&build(G.tree),200)});
+
+fetch("/api/graph").then(r=>r.json().then(d=>({ok:r.ok,d}))).then(({ok,d})=>{
+  if(!ok){$("stats").textContent=d.error;$("stats").className="err";return}
+  G=d; const s=d.stats;
+  $("stats").textContent=`${d.tree.children.length} headlines · ${s.projects} projects · ${s.activities} activities · ${s.methods} methods`;
+
+  build(d.tree); renderMethods(); applyLink();
+}).catch(e=>{$("stats").textContent="Error: "+e.message;$("stats").className="err"});
+</script>
+</body>
+</html>

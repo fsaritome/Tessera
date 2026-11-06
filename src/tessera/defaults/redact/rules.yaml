@@ -1,0 +1,212 @@
+# Rule-based redaction. Runs before anything leaves the pipeline.
+#
+#   drop:    a hit drops the WHOLE event (credentials, keys, tokens, connection strings).
+#   replace: matched text is replaced by `token` (re.sub syntax, backrefs allowed).
+#
+# Every rule MUST have examples.match and examples.no_match. tests/test_redact.py
+# checks each one, so a rule without examples fails the test suite.
+# Optional `channels: [public]` limits a rule to stricter channels; default is all channels.
+
+drop:
+  - id: private_key
+    pattern: '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+    examples:
+      match: ["-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN OPENSSH PRIVATE KEY-----"]
+      no_match: ["-----BEGIN CERTIFICATE-----", "public key fingerprint"]
+
+  - id: aws_access_key
+    pattern: '\bAKIA[0-9A-Z]{16}\b'
+    examples:
+      match: ["key AKIAIOSFODNN7EXAMPLE here"]
+      no_match: ["AKIA is the prefix of AWS keys"]
+
+  - id: github_token
+    pattern: '\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{20,})'
+    examples:
+      match: ["ghp_abcdefghijklmnopqrstuvwxyz0123456789", "github_pat_11ABCDEFG0123456789_abcdef"]
+      no_match: ["ghp_short", "use the gh CLI"]
+
+  - id: llm_api_key
+    pattern: '\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{20,}'
+    examples:
+      match: ["sk-ant-api03-abcdefghijklmnopqrstuvwxyz", "sk-proj-ABCDEFGHIJKLMNOPQRSTUV"]
+      no_match: ["sk-learn is a library", "task-12345"]
+
+  - id: slack_token
+    pattern: '\bxox[abprs]-[A-Za-z0-9-]{10,}'
+    examples:
+      match: ["xoxb-1234567890-abcdefghij"]
+      no_match: ["xox is not a token"]
+
+  - id: jwt
+    pattern: '\beyJ[\w-]{10,}\.eyJ[\w-]{10,}\.[\w-]{10,}'
+    examples:
+      match: ["eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"]
+      no_match: ["eyJ alone is just base64 for a brace"]
+
+  - id: bearer_token
+    pattern: '(?i)\bBearer\s+[A-Za-z0-9._~+/-]{20,}=*'
+    examples:
+      match: ["Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456"]
+      no_match: ["the bearer of bad news"]
+
+  - id: secret_assignment
+    pattern: '(?i)\b(?:password|passwd|pwd|passphrase|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)\b\s*[:=]\s*["'']?[^\s"''<>{}$*]{4,}'
+    examples:
+      match: ["password=Hunter2024!", "secret: Summer2026x", "API_KEY = 'abcd1234efgh'"]
+      no_match: ["password reset done", "password: <redacted>", "password=${DB_PASS}", "password: ****"]
+
+  - id: connection_string
+    pattern: '(?i)(?:\b(?:Server|Data Source)=[^;\n]+;[^\n]*?(?:Password|Pwd)=|AccountKey=|SharedAccessSignature=)'
+    examples:
+      match: ["Server=db;Database=x;User Id=sa;Password=abc;", "DefaultEndpointsProtocol=https;AccountKey=abc=="]
+      no_match: ["Server=db;Database=x;Integrated Security=true;"]
+
+  - id: url_with_credentials
+    pattern: '\b[a-z][a-z0-9+.-]*://[^\s:/@]+:[^\s@/]+@'
+    examples:
+      match: ["postgres://admin:s3cret@db/x", "https://user:pw@example.com"]
+      no_match: ["https://github.com/org/repo", "mailto:someone"]
+
+replace:
+  - id: certificate_block
+    pattern: '-----BEGIN [A-Z ]+-----[\s\S]*?-----END [A-Z ]+-----'
+    token: '[Certificate]'
+    examples:
+      match: ["-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----"]
+      no_match: ["BEGIN and END keywords"]
+
+  - id: user_path
+    pattern: '(?i)(\b[A-Z]:\\Users\\|/home/|/Users/)(?!<user>)[^\\/\s]+'
+    token: '\1<user>'
+    examples:
+      match: ['C:\Users\jdoe\Desktop', "/home/jdoe/.config"]
+      no_match: ['C:\Program Files\App', "/usr/local/bin"]
+
+  - id: drive_path
+    # Paths on drive letters other than C: are usually mapped network shares.
+    pattern: '(?i)\b[D-Z]:\\[^\s"''<>|]*'
+    token: '[Path]'
+    examples:
+      match: ['E:\Projects\notes.docx', 'open H:\Shared\2026']
+      no_match: ['C:\Windows\System32', 'ratio 3:1']
+
+  - id: unc_path
+    pattern: '\\\\[\w.$-]+\\[\w.$-]+'
+    token: '[Path]'
+    examples:
+      match: ['\\fileserver\share$', '\\10.0.0.5\share']
+      no_match: ['C:\temp\file.txt', 'a single \ backslash']
+
+  - id: email
+    pattern: '\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b'
+    token: '[Email]'
+    examples:
+      match: ["mail jane.doe@example.com now"]
+      no_match: ["@mention in chat", "decorator @property"]
+
+  - id: internal_domain_suffix
+    pattern: '(?i)\b[\w-]+(?:\.[\w-]+)*\.(?:local|lan|intern|internal|corp|ad|home\.arpa)\b'
+    token: '[Host]'
+    examples:
+      match: ["dc01.example-corp.local", "intranet.corp", "nas.lan"]
+      no_match: ["localhost", "config.yaml", "github.com"]
+
+  - id: srv_hostname
+    # Anything named srv... (srvweb3, SRVMAIL01, srvmonitor).
+    pattern: '(?i)\bsrv[a-z0-9_-]*[a-z0-9]\$?'
+    token: '[Host]'
+    examples:
+      match: ["srvweb3 is full", "SRVMAIL01", "srvmonitor dashboard", "SRVFILE1$"]
+      no_match: ["server", "srv record", "observe srv"]
+
+  - id: company
+    # Names ending in a legal form: usually clients, vendors or partners.
+    pattern: '\b(?:[A-Z][\w&.''-]*\s){1,4}(?:GmbH(?:\s&\sCo\.\sKG)?|AG|KG|SE|Inc\.?|LLC|Ltd\.?|LLP|B\.V\.|Corp\.?|S\.A\.|Co\.,\sLtd\.?|K\.K\.)(?!\w)'
+    token: '[Company]'
+    examples:
+      match: ["for Example Widgets GmbH today", "Acme Inc.", "Example Trading Co., Ltd.", "Example Holding GmbH & Co. KG"]
+      no_match: ["GmbH alone", "use the AG module", "an SE linux box"]
+
+  - id: hostname_convention
+    # Typical internal naming: role prefix + number (srv01, DC-02, gpu01, fs1 ...).
+    pattern: '(?i)\b(?:srv|server|host|node|dc|fs|sql|db|ws|pc|vm|gpu|app|web|mail|nas|fw|sw|rt|ap|hv|backup)[-_]?\d{1,3}\b'
+    token: '[Host]'
+    examples:
+      match: ["ssh to srv01", "DC-02 rebooted", "runs on gpu01", "node3 host"]
+      no_match: ["utf-8", "python312 venv", "server room"]
+
+  - id: domain_user
+    pattern: '\b[A-Z][A-Z0-9-]{1,14}\\[a-z][\w.-]{1,20}\b'
+    token: '[User]'
+    examples:
+      match: ['CORP\jdoe logged in']
+      no_match: ['C:\temp', 'path\to\file']
+
+  - id: ipv4
+    pattern: '\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:/\d{1,2})?\b'
+    token: '[IP]'
+    examples:
+      match: ["192.168.10.5", "10.0.0.0/8"]
+      no_match: ["version 1.2.3", "06.11.2026"]
+
+  - id: ipv6
+    pattern: '(?i)\b(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\b|\b(?:fe80|fd[0-9a-f]{2}|fc[0-9a-f]{2}|2001):[0-9a-f:]*'
+    token: '[IP]'
+    examples:
+      match: ["fe80::1ff:fe23:4567:890a", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
+      no_match: ["12:30:45", "std::string"]
+
+  - id: mac_address
+    pattern: '(?i)\b(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}\b'
+    token: '[MAC]'
+    examples:
+      match: ["00:1A:2B:3C:4D:5E", "00-1a-2b-3c-4d-5e"]
+      no_match: ["12:30:45"]
+
+  - id: vlan
+    pattern: '(?i)\bVLAN\s?-?\d{1,4}\b'
+    token: '[VLAN]'
+    examples:
+      match: ["VLAN 20", "vlan-110"]
+      no_match: ["VLANs in general"]
+
+  - id: firewall_rule
+    pattern: '(?i)(?:\b(?:permit|deny|allow|reject)\s+(?:tcp|udp|ip|icmp|any)\b[^\n]*|\b(?:New-NetFirewallRule|netsh\s+advfirewall|iptables|nft\s+add|ufw\s+(?:allow|deny))\b[^\n]*)'
+    token: '[Firewall-Rule]'
+    examples:
+      match: ["permit tcp any host 10.1.1.1 eq 443", "iptables -A INPUT -p tcp --dport 22 -j ACCEPT", "New-NetFirewallRule -DisplayName X"]
+      no_match: ["we allow users to log in", "firewall review done"]
+
+  - id: port_number
+    pattern: '(?i)\b(?:ports?|dport|sport)\s*[:=]?\s*\d{2,5}(?:\s*[-,/]\s*\d{2,5})*\b'
+    token: '[Port]'
+    examples:
+      match: ["port 3389 open", "ports 80,443"]
+      no_match: ["port the code to Python", "export 12"]
+
+  - id: phone
+    # International form needs >= 8 digits so diff stats like "+21345/-1540" don't match.
+    pattern: '(?:(?<![\w.])(?:\+|00)(?=(?:[\s/-]?\(?\d\)?){8})\d{1,3}[\s/-]?(?:\(0\)\s?)?\d{2,5}(?:[\s/-]?\d{2,}){1,4}|(?<![\w.])0\d{2,5}[\s/-]\d{3,}(?:[\s-]?\d+)*)'
+    token: '[Phone]'
+    examples:
+      match: ["+44 20 7946 0958", "0044 (0)20 7946 0958", "020 7946 0958-12"]
+      no_match: ["version 0.11.29", "06.11.2026", "2026", "(+21345/-1540 lines)", "+1833/-9"]
+
+  - id: amount
+    pattern: '(?i)(?:(?:€|\bEUR|\bUSD|\bCHF|\$)\s?\d[\d.,'']*(?:\s?(?:k|m|bn))?|\b\d[\d.,'']*\s?(?:k\s?)?(?:€|EUR\b|USD\b|CHF\b|Euro\b))'
+    token: '[Amount]'
+    examples:
+      match: ["costs 12.500 €", "EUR 1,200", "$499", "15k EUR"]
+      no_match: ["Europe", "$HOME", "5 users"]
+
+# Term lists in config/redact/terms/ (one term per line, # comments).
+# Real lists are git-ignored; *.example.txt are templates. Case-insensitive, whole words,
+# longest term wins.
+terms:
+  clients.txt: '[Client]'
+  colleagues.txt: '[Person]'
+  hosts.txt: '[Host]'
+  internal_terms.txt: '[internal]'
+# Terms listed here are never replaced (e.g. your own name, if you want to appear).
+whitelist: whitelist.txt

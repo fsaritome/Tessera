@@ -1,0 +1,2 @@
+# Copy to hosts.txt (git-ignored) and fill in. One term per line, # starts a comment.
+dc01

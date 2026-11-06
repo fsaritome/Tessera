@@ -1,0 +1,3 @@
+# Final gate (git-ignored). Copy to forbidden.txt. One case-insensitive regex per line;
+# any hit in a finished draft blocks it.
+mycompany

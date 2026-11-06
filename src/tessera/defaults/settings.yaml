@@ -1,0 +1,92 @@
+# Tessera default settings. Override any key in <home>/config/settings.yaml
+# (home = ~/.tessera, or $TESSERA_HOME). Keys you don't set keep these values.
+
+# IANA name like America/New_York; null = this computer's local time zone.
+timezone: null
+window_days: 7
+
+# One or two sentences about you. Helps the extraction tell work from your
+# private projects. Stays in the prompt, is never shown anywhere else.
+profile:
+  about: ""
+
+sources:
+  claude_code:
+    enabled: true
+    # Default: ~/.claude/projects. Override with env TESSERA_CLAUDE_DIR.
+    projects_dir: null
+    # Subagent (sidechain) records duplicate the main session; skip them.
+    include_sidechains: false
+  cowork:
+    # Cowork sessions of the Claude desktop app, found automatically.
+    enabled: true
+    dir: null            # env TESSERA_COWORK_DIR
+  claude_export:
+    # claude.ai data export zip: found automatically in <home>/inbox and ~/Downloads.
+    enabled: true
+    dirs: []
+  git:
+    enabled: true
+    # Repos to scan. Paths may use ~. Missing repos are skipped with a warning.
+    repos: []
+    # Only commits by these author emails. Empty = `git config user.email` of each repo.
+    authors: []
+
+projects:
+  # Map a folder name (basename of cwd / repo) to a display name.
+  aliases: {}
+  # Folder names whose events are always dropped.
+  exclude: []
+  # Sessions run in Claude desktop scratch workspaces get this project name.
+  scratch_name: Ad-hoc
+  # "When in doubt, drop": set false to keep only projects listed in aliases.
+  include_unknown: true
+
+# Your internal DNS domains (e.g. example-corp.com). Redacted as [Host], incl. subdomains.
+internal_domains: []
+
+redact:
+  # Readable stand-ins, applied before the rules: `literal==>new` or `regex:pattern==>new`.
+  pseudonym_files: [config/redact/pseudonyms.txt]
+  # Your own extra rules (same format as the default rules.yaml), e.g. for
+  # industry-specific reference numbers. Kept with your data, never shared.
+  extra_rule_files: [config/redact/extra-rules.yaml]
+  # Final gate: one case-insensitive regex per line; any hit blocks the output.
+  forbidden:
+    internal: [config/redact/forbidden.txt]
+    public: []
+
+# Work that must stay abstract: such activities keep only a generic description.
+sensitive:
+  # Project name -> the only description ever shown for it.
+  projects: {}
+  # Regexes on the raw event text. A hit generalizes the event.
+  topics: []
+  # Redaction hits that show the event touched confidential material -> generalize it.
+  trigger_rules: [company, "term:[Client]"]
+  label: Confidential work
+
+extract:
+  # Who reads your sessions and writes the activities:
+  #   claude-code  you run /tessera:map inside Claude Code (your own subscription, no key)
+  #   api          Claude API with your own key (env ANTHROPIC_API_KEY)
+  #   local        an OpenAI-compatible local model (see llm below)
+  engine: claude-code
+  effort: low
+  # Characters per batch handed to Claude Code (one Read each).
+  batch_chars: 40000
+
+claude:
+  model: claude-opus-5-5
+  effort: medium
+
+llm:
+  # OpenAI-compatible endpoint on your own machine or network (Ollama, llama.cpp, vLLM ...).
+  base_url: null       # env TESSERA_LLM_URL, e.g. http://localhost:11434/v1
+  model: null          # env TESSERA_LLM_MODEL
+  timeout_s: 300
+  temperature: 0.2
+  # Hosts that count as local in addition to loopback/private IPs.
+  local_hosts: [localhost]
+
+

@@ -1,0 +1,10 @@
+{
+  "name": "tessera",
+  "version": "0.1.0",
+  "description": "See what you actually do with Claude: a local, redacted, zoomable map of your Claude Code, Cowork and claude.ai sessions. Runs on your own Claude, no API key.",
+  "author": { "name": "Ferit Sari Tomé" },
+  "homepage": "https://github.com/fsaritome/Tessera",
+  "repository": "https://github.com/fsaritome/Tessera",
+  "license": "MIT",
+  "keywords": ["insights", "map", "sessions", "productivity"]
+}

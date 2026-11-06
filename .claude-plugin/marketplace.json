@@ -1,0 +1,12 @@
+{
+  "name": "tessera",
+  "description": "Tessera: a map of what you do with Claude",
+  "owner": { "name": "Ferit Sari Tomé" },
+  "plugins": [
+    {
+      "name": "tessera",
+      "source": "./",
+      "description": "Scan your Claude sessions locally and see them as a zoomable map of headlines, projects, activities and methods."
+    }
+  ]
+}

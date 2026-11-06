@@ -1,0 +1,5 @@
+# Readable stand-ins (git-ignored). Copy to pseudonyms.txt.
+#   literal==>replacement      exact text, case-sensitive
+#   regex:pattern==>replacement Python re syntax, backrefs \1
+regex:\bweb(\d+)\b==>WEBSITE-\1
+Springfield==>Site A

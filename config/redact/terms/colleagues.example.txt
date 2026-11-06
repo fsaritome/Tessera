@@ -1,0 +1,2 @@
+# Copy to colleagues.txt (git-ignored) and fill in. One term per line, # starts a comment.
+Jane Doe
