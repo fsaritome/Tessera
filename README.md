@@ -1,6 +1,10 @@
-# Tessera
+<p align="center"><img src="docs/banner.jpg" alt="Tessera: an owl looking at a map of connected circle clusters" width="100%"></p>
+
+<h1><img src="docs/logo.svg" alt="" width="40" align="top"> Tessera</h1>
 
 **See what you actually do with Claude.**
+
+<img src="docs/owl.png" alt="The Tessera owl" width="150" align="right">
 
 Tessera reads your Claude Code sessions, Claude desktop (Cowork) sessions and claude.ai
 chats on your own machine, and turns them into one zoomable map: a few big headlines
@@ -34,6 +38,14 @@ http://127.0.0.1:18765. Run it again any time: only new or changed sessions are 
 
 ## What the map shows
 
+A real map of one person's sessions in share mode: side projects, home and learning.
+
+![Overview: four headlines, each a cluster of projects and activities](docs/map-overview.png)
+
+| Zoom into a headline | Light up a method |
+|---|---|
+| ![The projects behind one headline](docs/map-zoom.png) | ![Every activity that used one method, across all headlines](docs/map-method.png) |
+
 | Zoom level | What you see |
 |---|---|
 | Overview | 4-7 headlines Claude writes from your actual topics, e.g. "Building tools with AI agents" |
@@ -43,6 +55,21 @@ http://127.0.0.1:18765. Run it again any time: only new or changed sessions are 
 
 Headlines are not fixed categories. They are rewritten when new work arrives, while the
 existing ones are kept where they still fit, so your map stays stable but can grow.
+
+### Showing your map to others
+
+`tessera map --share` leaves out projects you marked as your job and every activity
+Claude did not mark as shareable, and drops the summaries. Links open a fixed view, handy
+for screenshots:
+
+| Parameter | Example | Effect |
+|---|---|---|
+| `focus` | `?focus=Headline/Project` | Opens zoomed into a headline or project |
+| `method` | `?method=Research before deciding` | Lights up one method |
+| `theme` | `?theme=light` | `dark` or `light` |
+| `panel` | `?panel=0` | Map only, no side panel |
+
+Screenshots are pictures: look at every label before you post one.
 
 ## Where the data comes from
 
@@ -115,7 +142,7 @@ sources:
 | `tessera prepare` / `import` | Batches for Claude Code and checking its answers (used by the plugin) |
 | `tessera extract --engine api\|local` | Extract without Claude Code |
 | `tessera merge` | Headlines, projects and methods |
-| `tessera map` | Open the map |
+| `tessera map [--share]` | Open the map (`--share`: only what you would show others) |
 | `tessera suggest` | Names and hosts that still get through redaction |
 | `tessera check-redact "text"` | Try the redaction rules on any text |
 

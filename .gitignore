@@ -23,3 +23,6 @@ config/redact/forbidden.txt
 
 # Leak-scan list for publishing: built from session content, stays local
 tools/publish-forbidden.txt
+
+# Image drafts (only chosen ones go to docs/)
+branding/

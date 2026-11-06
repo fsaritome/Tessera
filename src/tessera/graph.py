@@ -345,3 +345,47 @@ def build_tree(
             for g, ps in sorted(groups.items())
         ],
     }
+
+
+def share_view(g: dict[str, Any]) -> dict[str, Any]:
+    """The map as it may be shown to others: no work projects, only activities marked
+    shareable (public_ok), no AI-written summaries. Hidden parts never reach the page."""
+    tree = {"name": g["tree"]["name"], "type": "root", "children": []}
+    keep_projects: set[str] = set()
+    for h in g["tree"]["children"]:
+        projects = []
+        for p in h["children"]:
+            if p.get("kind") == "job":
+                continue
+            leaves = [a for a in p["children"] if a.get("public")]
+            if leaves:
+                projects.append({**p, "summary": "", "children": leaves})
+                keep_projects.add(p["name"])
+        if projects:
+            tree["children"].append({**h, "summary": "", "children": projects})
+    acts = {p: [a for a in items if a["public_ok"]]
+            for p, items in g["activities"].items() if p in keep_projects}  # fmt: skip
+    used: dict[str, int] = defaultdict(int)
+    for items in acts.values():
+        for a in items:
+            for m in a["methods"]:
+                used[m] += 1
+    methods = [{**m, "summary": "", "activities": used[m["name"]],
+                "projects": sum(1 for items in acts.values()
+                                if any(m["name"] in a["methods"] for a in items))}
+               for m in g["methods"] if used.get(m["name"])]  # fmt: skip
+    names = {f"p:{p}" for p in keep_projects} | {f"m:{m['name']}" for m in methods}
+    return {
+        "tree": tree,
+        "methods": methods,
+        "nodes": [{**n, "summary": ""} for n in g["nodes"] if n["id"] in names],
+        "edges": [e for e in g["edges"] if e["from"] in names and e["to"] in names],
+        "activities": acts,
+        "stats": {
+            "projects": len(keep_projects),
+            "methods": len(methods),
+            "activities": sum(len(v) for v in acts.values()),
+            "areas": sorted({p["area"] for h in tree["children"] for p in h["children"]}),
+        },
+        "shared": True,
+    }

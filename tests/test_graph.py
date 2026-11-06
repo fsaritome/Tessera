@@ -150,6 +150,36 @@ class NoClient:
     beta = None
 
 
+def test_share_view_hides_job_private_and_summaries(seeded):
+    store = ActivityStore(seeded)
+    row = dict(store.rows["claude_code:s3"], unit_id="claude_code:s4")
+    row["activities"] = [_act("StarChart", ["random controls"], public=False, area="science")]
+    store.put(row)
+    store.save()
+    g, _ = _ready(seeded)
+    s = graph.share_view(g)
+    heads = {h["name"]: [p["name"] for p in h["children"]] for h in s["tree"]["children"]}
+    assert heads == {
+        "Building tools with AI": ["GardenPlanner"],
+        "Curiosity projects": ["StarChart"],
+    }
+    star = s["tree"]["children"][1]["children"][0]
+    assert [a["public"] for a in star["children"]] == [True]  # the private one is gone
+    assert all(h["summary"] == "" for h in s["tree"]["children"])
+    assert all(m["summary"] == "" for m in s["methods"])
+    text = json.dumps(s)
+    assert "Quarterly report" not in text and "copy tool" not in text
+    assert s["stats"]["projects"] == 2 and s["shared"] is True
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), ui.make_handler(seeded, share=True))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{server.server_address[1]}/api/graph"
+        assert "Quarterly report" not in urllib.request.urlopen(url).read().decode()
+    finally:
+        server.shutdown()
+
+
 def test_map_serves_page_and_graph_only(seeded):
     _ready(seeded)
     server = ThreadingHTTPServer(("127.0.0.1", 0), ui.make_handler(seeded, client=NoClient()))

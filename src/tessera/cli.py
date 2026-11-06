@@ -185,7 +185,7 @@ def _cmd_merge(cfg, args) -> int:
 def _cmd_map(cfg, args) -> int:
     from .ui import serve
 
-    serve(cfg, port=args.port, open_browser=not args.no_browser)
+    serve(cfg, port=args.port, open_browser=not args.no_browser, share=args.share)
     return 0
 
 
@@ -278,6 +278,11 @@ def main(argv: list[str] | None = None) -> int:
     sp = sub.add_parser("map", aliases=["ui"], help="open the map in your browser")
     sp.add_argument("--port", type=int, default=18765)
     sp.add_argument("--no-browser", action="store_true")
+    sp.add_argument(
+        "--share",
+        action="store_true",
+        help="safe to show others: no work projects, only shareable activities",
+    )
     sp.set_defaults(func=_cmd_map)
 
     sp = sub.add_parser("essence", help="text summary of everything extracted")

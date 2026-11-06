@@ -46,6 +46,7 @@ textarea{width:100%;resize:vertical}
 .list li .how{color:var(--muted);font-size:12px}
 .err{color:var(--err)}
 .muted{color:var(--muted)}
+.nopanel main{grid-template-columns:1fr}.nopanel aside,.nopanel #hint{display:none}
 @media (max-width:900px){main{grid-template-columns:1fr}#mapwrap{height:70vh}aside{border-left:0;border-top:1px solid var(--border)}}
 </style>
 </head>
@@ -74,6 +75,7 @@ const PALETTE=["#7F77DD","#1D9E75","#D85A30","#378ADD","#D4537E","#BA7517","#639
 const PARAMS=new URLSearchParams(location.search);
 const THEME=PARAMS.get("theme");
 if(THEME==="dark"||THEME==="light")document.documentElement.dataset.theme=THEME;
+if(PARAMS.get("panel")==="0")document.documentElement.classList.add("nopanel"); /* map only, e.g. for screenshots */
 const dark=THEME?THEME==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
 const INK=dark?"#ecebe6":"#1f1e1d", MUTED=dark?"#a3a29c":"#73726c", HALO=dark?"#161615":"#f6f5f1";
 const $=id=>document.getElementById(id);
@@ -124,13 +126,14 @@ function build(data){
       if(step.data.type==="activity")show(step);else zoom(step)});
   label=gLabels.selectAll("g").data(root.descendants().slice(1)).join("g").style("opacity",d=>d.parent===root?1:0);
   label.each(function(d){const g=d3.select(this),t=d.data.type;
-    const lines=t==="activity"?wrap(d.data.name,18):t==="project"?wrap(d.data.name,16):[d.data.name];
+    const lines=t==="activity"?wrap(d.data.name,18):t==="project"?wrap(d.data.name,16):wrap(d.data.name,16);
     const tx=g.append("text").attr("text-anchor","middle").attr("fill",t==="activity"&&d.data.public?"#fff":INK)
       .attr("font-weight",t==="activity"?400:600).attr("paint-order","stroke").attr("stroke",t==="activity"&&d.data.public?"none":HALO).attr("stroke-width",3);
     lines.forEach((l,i)=>tx.append("tspan").attr("x",0).attr("dy",i?"1.15em":0).text(l));
     if(t==="headline"){const n=d.children.length,a=d.leaves().length;
       tx.append("tspan").attr("x",0).attr("dy","1.35em").attr("font-weight",400).attr("fill",MUTED).text(`${n} project${n===1?"":"s"} · ${a} activit${a===1?"y":"ies"}`)}
-    d.lines=lines.length+(t==="headline"?1:0)});
+    d.lines=lines.length+(t==="headline"?1:0);
+    d.maxc=Math.max(...lines.map(l=>l.length),t==="headline"?20:0)});
   svg.on("click",()=>{if(focus!==root)zoom(focus.parent)});
   svg.on("wheel",e=>{e.preventDefault();if(animating)return;
     if(e.deltaY>0){if(focus!==root)zoom(focus.parent);return}
@@ -146,10 +149,10 @@ function zoomTo(v){
     .attr("font-size",d=>fontSize(d,k))
     .style("display",d=>d.parent===focus&&d.r*k>(d.data.type==="activity"?26:18)?null:"none");
 }
-function fontSize(d,k){const r=d.r*k,t=d.data.type;
-  if(t==="headline")return Math.max(13,Math.min(22,r/5.5));
-  if(t==="project")return Math.max(11,Math.min(17,r/4.5));
-  return Math.max(9.5,Math.min(13,r/4.2))}
+function fontSize(d,k){const r=d.r*k,t=d.data.type,fit=1.7*r/((d.maxc||10)*.56);  /* text stays inside the circle */
+  if(t==="headline")return Math.max(11,Math.min(22,r/5.5,fit));
+  if(t==="project")return Math.max(10,Math.min(17,r/4.5,fit));
+  return Math.max(9.5,Math.min(13,r/4.2,fit))}
 function zoom(d){
   if(!d)return; focus=d; animating=true;
   svg.transition().duration(650).ease(d3.easeCubicInOut).tween("zoom",()=>{const i=d3.interpolateZoom(view,[d.x,d.y,d.r*2]);return t=>zoomTo(i(t))})

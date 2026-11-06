@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import Config
-from .graph import build_graph
+from .graph import build_graph, share_view
 
 try:  # optional local extensions, not part of the published package
     from . import local_extensions as ext
@@ -25,7 +25,9 @@ except ImportError:
 PAGE = Path(__file__).parent / "web" / "index.html"
 
 
-def make_handler(cfg: Config, client: Any = None) -> type[BaseHTTPRequestHandler]:
+def make_handler(
+    cfg: Config, client: Any = None, share: bool = False
+) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt: str, *args: Any) -> None:  # keep the console quiet
             pass
@@ -44,12 +46,14 @@ def make_handler(cfg: Config, client: Any = None) -> type[BaseHTTPRequestHandler
         def do_GET(self) -> None:
             path = self.path.split("?", 1)[0]
             if path == "/":
-                body = (ext.page(cfg) if ext else None) or PAGE.read_bytes()
+                body = (None if share or not ext else ext.page(cfg)) or PAGE.read_bytes()
                 self._send(HTTPStatus.OK, body, "text/html; charset=utf-8")
             elif path == "/api/graph":
                 try:
                     g = build_graph(cfg)
-                    if ext:
+                    if share:
+                        g = share_view(g)
+                    elif ext:
                         g.update(ext.graph_extras(cfg))
                     self._json(HTTPStatus.OK, g)
                 except (RuntimeError, OSError) as e:
@@ -58,16 +62,17 @@ def make_handler(cfg: Config, client: Any = None) -> type[BaseHTTPRequestHandler
                 self._send(HTTPStatus.NOT_FOUND, b"not found", "text/plain")
 
         def do_POST(self) -> None:
-            if not (ext and ext.post(self, cfg, client)):
+            if share or not (ext and ext.post(self, cfg, client)):
                 self._send(HTTPStatus.NOT_FOUND, b"not found", "text/plain")
 
     return Handler
 
 
-def serve(cfg: Config, port: int = 18765, open_browser: bool = True) -> None:
-    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(cfg))
+def serve(cfg: Config, port: int = 18765, open_browser: bool = True, share: bool = False) -> None:
+    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(cfg, share=share))
     url = f"http://127.0.0.1:{port}/"
-    print(f"Tessera map on {url}  (Ctrl+C to stop)", flush=True)
+    mode = "  share mode: no work projects, only shareable activities" if share else ""
+    print(f"Tessera map on {url}{mode}  (Ctrl+C to stop)", flush=True)
     if open_browser:
         webbrowser.open(url)
     try:
