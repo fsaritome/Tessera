@@ -195,7 +195,7 @@ def test_map_stop_ends_the_running_map(seeded):
     proc = subprocess.Popen([sys.executable, "-c", code], env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # fmt: skip
     try:
-        for _ in range(100):
+        for _ in range(300):  # slow CI machines need a while to start Python
             if (seeded.state_dir / "map.json").is_file():
                 break
             time.sleep(0.1)

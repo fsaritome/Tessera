@@ -28,6 +28,8 @@ except ImportError:
     ext = None  # type: ignore[assignment]
 
 PAGE = Path(__file__).parent / "web" / "index.html"
+# Talk to our own local map directly: system or proxy settings must not reroute 127.0.0.1.
+_LOCAL = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
 
 class MapServer(ThreadingHTTPServer):
@@ -130,11 +132,14 @@ def stop(cfg: Config) -> str:
     except (OSError, ValueError):
         return "No Tessera map is running."
     url = f"http://127.0.0.1:{info['port']}/api/ping"
-    try:
-        with urllib.request.urlopen(url, timeout=3) as r:
-            alive = json.load(r).get("token") == info.get("token")
-    except (OSError, ValueError):
-        alive = False
+    alive = False
+    for _ in range(6):  # a map that just started may need a moment to answer
+        try:
+            with _LOCAL.open(url, timeout=3) as r:
+                alive = json.load(r).get("token") == info.get("token")
+            break
+        except (OSError, ValueError):
+            time.sleep(0.5)
     if not alive:  # stale file: the map already ended without cleaning up
         pidfile.unlink(missing_ok=True)
         return "No Tessera map is running."
@@ -142,7 +147,7 @@ def stop(cfg: Config) -> str:
     for _ in range(30):
         time.sleep(0.1)
         try:
-            urllib.request.urlopen(url, timeout=0.5)
+            _LOCAL.open(url, timeout=0.5)
         except OSError:
             break
     pidfile.unlink(missing_ok=True)

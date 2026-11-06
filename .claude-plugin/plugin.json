@@ -1,7 +1,7 @@
 {
   "name": "tessera",
   "displayName": "Tessera",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "See what you actually do with Claude. Tessera reads your Claude Code, Claude desktop (Cowork) and claude.ai sessions on your own machine, redacts them, and turns them into one zoomable map: a few headlines about your life and work, the projects inside them, every activity, and the methods that connect them. Runs on your own Claude plan, no API key; type /tessera:start for a guided start. Reading uses your plan's limits: the first run covers 30 days and shows an estimate before it starts.",
   "author": { "name": "Ferit Sari Tomé", "url": "https://github.com/fsaritome" },
   "homepage": "https://github.com/fsaritome/Tessera",

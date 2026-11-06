@@ -38,11 +38,11 @@ do not run, install or import anything from it. Review it as a security auditor 
 4. What can leave my computer, and through which path.
 5. Anything that runs on its own: hooks, MCP servers, install or build scripts.
 6. Anything suspicious, risky or worth fixing.
-Quote file and line for every claim. Then check the tag v0.3.0 is the same code you read.
+Quote file and line for every claim. Then check the tag v0.3.1 is the same code you read.
 ```
 
 To install exactly the version you checked, use the marketplace with its version tag,
-`fsaritome/Tessera#v0.3.0` instead of `fsaritome/Tessera`, in the terminal commands below.
+`fsaritome/Tessera#v0.3.1` instead of `fsaritome/Tessera`, in the terminal commands below.
 A tagged version never changes, even if the repository does later.
 
 ## Install
