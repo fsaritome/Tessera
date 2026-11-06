@@ -116,7 +116,7 @@ def prepare(cfg: Config, days: int = 365, limit: int | None = None) -> Prepared:
         paths.append(path)
     (wd / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
     written = sum(p.stat().st_size for p in paths)
-    tokens = written // 4 + len(paths) * ANSWER_AND_WORK_TOKENS
+    tokens = extract.estimate_tokens(written) + len(paths) * ANSWER_AND_WORK_TOKENS
     return Prepared(paths, len(todo), sum(len(u.text) for u in todo), len(units), stats, tokens)
 
 

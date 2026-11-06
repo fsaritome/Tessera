@@ -34,11 +34,11 @@ do not run, install or import anything from it. Review it as a security auditor 
 4. What can leave my computer, and through which path.
 5. Anything that runs on its own: hooks, MCP servers, install or build scripts.
 6. Anything suspicious, risky or worth fixing.
-Quote file and line for every claim. Then check the tag v0.2.1 is the same code you read.
+Quote file and line for every claim. Then check the tag v0.2.2 is the same code you read.
 ```
 
 To install exactly the version you checked, use the marketplace with its version tag,
-`fsaritome/Tessera#v0.2.1` instead of `fsaritome/Tessera`, in the terminal commands below.
+`fsaritome/Tessera#v0.2.2` instead of `fsaritome/Tessera`, in the terminal commands below.
 A tagged version never changes, even if the repository does later.
 
 ## Install
@@ -142,10 +142,13 @@ it has already read are never read again. `/tessera:map 365` adds the rest of th
 
 Tessera itself is free, but Claude reads your sessions **on your own Claude plan**, so it
 uses your plan's limits like any other work in Claude Code. Before reading, Tessera shows
-the number of batches and an estimate. The real run in the pictures above was 30 days on
-one computer: 58 sessions, 3 batches, about 40,000 tokens, done in under four minutes.
+the number of batches and an estimate. It is counted on your computer, needs no API key and
+sends nothing; its ratio of characters to tokens was measured with Anthropic's token
+counter. The real run in the pictures above was 30 days on one computer: 58 sessions,
+3 batches, about 60,000 tokens, done in under four minutes. (The picture still shows the
+older, too low estimate of 40k.)
 
-A batch holds up to about 15,000 tokens. With more than 15 batches, Claude asks you
+A batch is up to about 20,000 tokens. With more than 15 batches, Claude asks you
 before it starts, so a heavy year of use (dozens of batches) never runs by surprise.
 Start with the default 30 days and add more once you like the map. Later runs only read
 what is new.

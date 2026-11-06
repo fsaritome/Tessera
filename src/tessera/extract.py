@@ -24,6 +24,15 @@ from .sensitive import TAG as GENERALIZED
 from .sensitive import Sensitivity
 from .store import Store
 
+# Measured with Anthropic's token counter on Opus 5.5 and Sonnet 5.5: 2.1 chars per token for
+# German or log-like text, 2.6-2.9 for English and code. 2.3 errs on the high side.
+CHARS_PER_TOKEN = 2.3
+
+
+def estimate_tokens(chars: int) -> int:
+    return round(chars / CHARS_PER_TOKEN)
+
+
 LIFE_AREAS = [
     "work", "business", "software", "ai", "science", "making", "learning",
     "creative", "home", "family", "health", "finance", "other",
@@ -366,7 +375,7 @@ def run(
     units, todo, stats, store = pending(cfg, days, limit)
     res = ExtractResult(len(units), len(units) - len(todo), 0, [], 0, 0, stats)
     if dry_run or not todo:
-        res.tokens_in = sum(len(u.text) for u in todo) // 4  # rough estimate
+        res.tokens_in = estimate_tokens(sum(len(u.text) for u in todo))
         return res
 
     system = system_prompt(cfg)
